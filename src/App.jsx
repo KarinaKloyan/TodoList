@@ -6,25 +6,41 @@ import "./App.css";
 function App() {
   const [text, setText] = useState("");
   const [todos, setTodos] = useState([]);
+  const [error, setError] = useState("");
+
+  const [editId, setEditId] = useState(null);
+  const [editText, setEditText] = useState("");
 
   const handleChangeText = (e) => {
     setText(e.target.value);
+    if (error) {
+      setError("");
+    }
   };
 
   const addTodo = () => {
-    if (text.trim()) {
-      setTodos((prev) => {
-        return [
-          ...prev,
-          {
-            id: Date.now(),
-            title: text,
-            isDone: false,
-          },
-        ];
-      });
-      setText("");
+    if (!text.trim()) {
+      setError("Input is empty");
+      return;
     }
+
+    const exists = todos.some(
+      (todo) => todo.title.toLowerCase() === text.trim().toLowerCase(),
+    );
+    if (exists) {
+      setError("Todo already exists");
+      return;
+    }
+    setTodos((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        title: text,
+        isDone: false,
+      },
+    ]);
+    setText("");
+    setError("");
   };
 
   const removeTodo = (id) => {
@@ -45,21 +61,57 @@ function App() {
       }),
     );
   };
+
+  const startEdit = (todo) => {
+    setEditId(todo.id);
+    setEditText(todo.title);
+  };
+
+  const saveEdit = () => {
+    if (!editText.trim()) {
+      setError("Edit can't be empty");
+      return;
+    }
+    const exists = todos.some(
+      (todo) => todo.title.toLowerCase() === editText.trim().toLowerCase(),
+    );
+    if (exists) {
+      setError("Todo already exists");
+      return;
+    }
+    setTodos(
+      todos.map((todo) =>
+        todo.id === editId ? { ...todo, title: editText } : todo,
+      ),
+    );
+
+    setEditId(null);
+    setEditText("");
+    setError("");
+  };
+
   return (
-    <>
-      <h1>Todo App </h1>
-
-      <AddTodo
-        text={text}
-        handleChangeText={handleChangeText}
-        addTodo={addTodo}
+    <div className="container section">
+      <h1>TODO LIST</h1>
+      <div className="top-section">
+        <AddTodo
+          text={text}
+          handleChangeText={handleChangeText}
+          addTodo={addTodo}
+        />
+        {error && <p className="error">{error}</p>}
+      </div>
+      <TodoList
+        todos={todos}
+        updateTodo={updateTodo}
+        removeTodo={removeTodo}
+        startEdit={startEdit}
+        editId={editId}
+        editText={editText}
+        setEditText={setEditText}
+        saveEdit={saveEdit}
       />
-
-      <TodoList 
-      todos={todos} 
-      updateTodo={updateTodo} 
-      removeTodo={removeTodo} />
-    </>
+    </div>
   );
 }
 
